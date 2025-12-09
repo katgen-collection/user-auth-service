@@ -18,6 +18,7 @@ env:
   REMOTE_BIN_PATH: /usr/local/bin/user-auth-service
   REMOTE_ENV_DIR: /etc/user-auth-service
   REMOTE_ENV_FILE: /etc/user-auth-service/service.env
+  HEALTHCHECK_URL: https://api.mikhailjbs.my.id/auth/health
 
 jobs:
   deploy:
@@ -52,8 +53,12 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           port: ${{ secrets.VPS_PORT }}
           key: ${{ secrets.VPS_SSH_KEY }}
+          # 1. Source matches your build path
           source: "${{ env.BUILD_DIR }}/${{ env.BINARY_NAME }}"
-          target: "/tmp/${{ env.BINARY_NAME }}"
+          # 2. Target is just the parent directory (/tmp)
+          target: "/tmp"
+          # 3. Important: Remove the "build/" part of the path
+          strip_components: 1
           overwrite: true
 
       - name: Deploy and restart service
@@ -146,3 +151,17 @@ jobs:
             sudo systemctl status "${SERVICE_NAME}.service" --no-pager
 
             echo "Deployment completed"
+
+      - name: Verify service health
+        run: |
+          echo "Probing ${{ env.HEALTHCHECK_URL }}"
+          for attempt in $(seq 1 10); do
+            if curl -fsS "${{ env.HEALTHCHECK_URL }}" >/dev/null; then
+              echo "Healthcheck passed"
+              exit 0
+            fi
+            echo "Attempt ${attempt} failed, waiting before retry"
+            sleep 3
+          done
+          echo "Service failed healthcheck" >&2
+          exit 1
