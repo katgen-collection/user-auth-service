@@ -46,6 +46,15 @@ jobs:
           mkdir -p "${{ env.BUILD_DIR }}"
           go build -ldflags "-s -w" -o "${{ env.BUILD_DIR }}/${{ env.BINARY_NAME }}" "${{ env.BUILD_TARGET }}"
 
+      - name: Clean up previous upload
+        uses: appleboy/ssh-action@v1.1.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          port: ${{ secrets.VPS_PORT }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: rm -rf /tmp/${{ env.BINARY_NAME }}
+
       - name: Upload binary to VPS
         uses: appleboy/scp-action@v0.1.7
         with:
