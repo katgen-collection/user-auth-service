@@ -32,7 +32,7 @@ func Run() {
 
 	// 3. Init Database
 	dsn := fmt.Sprintf(
-		"host=%s port=%s user=%s password=%s dbname=%s sslmode=require pool_mode=session",
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=require pool_mode=session search_path=user_service",
 		cfg.DatabaseHost,
 		cfg.DatabasePort,
 		cfg.DatabaseUser,
