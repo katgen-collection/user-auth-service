@@ -18,6 +18,7 @@ type Config struct {
 	JWTSecret          string
 	JWTRefreshSecret   string
 	CookieDomain       string
+	CorsAllowedOrigins string
 	SessionExpiryHours int
 	AccessTokenMinutes int
 	RefreshTokenDays   int
@@ -38,6 +39,7 @@ func Load() *Config {
 		JWTSecret:          getEnv("JWT_SECRET", ""),
 		JWTRefreshSecret:   getEnv("JWT_REFRESH_SECRET", ""),
 		CookieDomain:       getEnv("AUTH_COOKIE_DOMAIN", "localhost"),
+		CorsAllowedOrigins: getEnv("CORS_ALLOWED_ORIGINS", "http://localhost:3002,http://localhost:8080,https://chat.mikhailjbs.my.id"),
 		SessionExpiryHours: getEnvAsInt("SESSION_EXPIRY_HOURS", 72),
 		AccessTokenMinutes: getEnvAsInt("ACCESS_TOKEN_TTL_MINUTES", 30),
 		RefreshTokenDays:   getEnvAsInt("REFRESH_TOKEN_TTL_DAYS", 30),

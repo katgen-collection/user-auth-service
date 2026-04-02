@@ -91,7 +91,7 @@ func Run() {
 	})
 
 	// 8. Init Server
-	app := http.NewServer()
+	app := http.NewServer(cfg.CorsAllowedOrigins)
 
 	// 9. Register Routes
 	http.RegisterRoutes(app, userHandler, authHandler, authzMiddleware)
