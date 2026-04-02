@@ -319,18 +319,26 @@ func (h *authHandler) setAuthCookies(c *fiber.Ctx, pair *security.TokenPair) {
 	}
 
 	cookieBase := func(name, value string, maxAge int) *fiber.Cookie {
+		// Determine if we're in production (using a real domain, not localhost)
+		isProduction := h.cookieDomain != "" && h.cookieDomain != "localhost"
+
 		cookie := &fiber.Cookie{
 			Name:     name,
 			Value:    value,
 			Path:     "/",
 			HTTPOnly: true,
-			Secure:   false, // Local dev: Secure=false
-			SameSite: fiber.CookieSameSiteLaxMode, // Local dev: Lax
+			Secure:   isProduction, // Secure=true for production (HTTPS required)
+			SameSite: fiber.CookieSameSiteLaxMode,
 			MaxAge:   maxAge,
 		}
-		if h.cookieDomain != "" && h.cookieDomain != "localhost" {
+
+		// For cross-subdomain cookies in production
+		if isProduction {
 			cookie.Domain = h.cookieDomain
+			// Use SameSite=None for cross-subdomain, but requires Secure=true
+			cookie.SameSite = fiber.CookieSameSiteNoneMode
 		}
+
 		return cookie
 	}
 
@@ -340,18 +348,24 @@ func (h *authHandler) setAuthCookies(c *fiber.Ctx, pair *security.TokenPair) {
 
 func (h *authHandler) clearAuthCookies(c *fiber.Ctx) {
 	clear := func(name string) {
+		// Determine if we're in production
+		isProduction := h.cookieDomain != "" && h.cookieDomain != "localhost"
+
 		cookie := &fiber.Cookie{
 			Name:     name,
 			Value:    "",
 			Path:     "/",
 			HTTPOnly: true,
-			Secure:   false,
+			Secure:   isProduction,
 			SameSite: fiber.CookieSameSiteLaxMode,
 			Expires:  time.Unix(0, 0),
 		}
-		if h.cookieDomain != "" && h.cookieDomain != "localhost" {
+
+		if isProduction {
 			cookie.Domain = h.cookieDomain
+			cookie.SameSite = fiber.CookieSameSiteNoneMode
 		}
+
 		c.Cookie(cookie)
 	}
 	clear(accessTokenCookieName)
