@@ -2,6 +2,7 @@ package user
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	"mikhailjbs/user-auth-service/internal/infra/security"
@@ -42,6 +43,11 @@ func NewService(r Repository) Service {
 }
 
 func (s *service) Create(u *CreateUserRequest) (*User, error) {
+	u.Email = strings.ToLower(strings.TrimSpace(u.Email))
+	if u.Role == "" {
+		u.Role = "user"
+	}
+
 	existing, err := s.repo.GetByEmail(u.Email)
 	if err != nil {
 		return nil, err

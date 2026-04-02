@@ -49,11 +49,6 @@ func Run() {
 		logger.Log.Fatalf("Failed to create schema 'user_service': %v", err)
 	}
 
-	// Second, switch the connection's focus to this schema
-	if err := db.Exec("SET search_path TO user_service").Error; err != nil {
-		logger.Log.Fatalf("Failed to set search_path: %v", err)
-	}
-
 	// Auto Migrate (for development simplicity, usually done via migration tools)
 	if err := db.AutoMigrate(&user.User{}, &sessiondomain.Session{}); err != nil {
 		logger.Log.Fatalf("Failed to migrate database: %v", err)
@@ -63,10 +58,18 @@ func Run() {
 	userRepo := repository.NewUserRepository(db)
 	sessionRepo := repository.NewSessionRepository(db)
 
+	// 7. Init Token Manager
+	accessTTL := time.Duration(cfg.AccessTokenMinutes) * time.Minute
+	refreshTTL := time.Duration(cfg.RefreshTokenDays) * 24 * time.Hour
+	tokenManager, err := security.NewTokenManager(cfg.JWTSecret, cfg.JWTRefreshSecret, accessTTL, refreshTTL, logger.Log)
+	if err != nil {
+		logger.Log.Fatalf("Failed to initialize token manager: %v", err)
+	}
+
 	// 5. Init Service (Domain)
 	userService := user.NewService(userRepo)
 	sessionService := sessiondomain.NewService(sessionRepo)
-	authService := authdomain.NewService(userService, sessionService, userRepo)
+	authService := authdomain.NewService(userService, sessionService, userRepo, tokenManager)
 
 	// 6. Init UseCases
 	createUserUC := usecase.NewCreateUserUseCase(userService)
@@ -78,14 +81,8 @@ func Run() {
 	loginAuthUC := authusecase.NewLoginUseCase(authService)
 	meAuthUC := authusecase.NewGetMeUseCase(authService)
 
-	// 7. Init Handlers
+	// 8. Init Handlers
 	userHandler := handlers.NewUserHandler(createUserUC, getUsersUC, getUserUC, updateUserUC, deleteUserUC)
-	accessTTL := time.Duration(cfg.AccessTokenMinutes) * time.Minute
-	refreshTTL := time.Duration(cfg.RefreshTokenDays) * 24 * time.Hour
-	tokenManager, err := security.NewTokenManager(cfg.JWTSecret, cfg.JWTRefreshSecret, accessTTL, refreshTTL, logger.Log)
-	if err != nil {
-		logger.Log.Fatalf("Failed to initialize token manager: %v", err)
-	}
 	authHandler := handlers.NewAuthHandler(registerAuthUC, loginAuthUC, meAuthUC, sessionService, tokenManager, cfg.CookieDomain)
 	authzMiddleware := middleware.NewAuthMiddleware(middleware.Config{
 		TokenManager:      tokenManager,

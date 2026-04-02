@@ -2,6 +2,7 @@ package auth
 
 import (
 	"errors"
+	"strings"
 
 	"mikhailjbs/user-auth-service/internal/domain/session"
 	"mikhailjbs/user-auth-service/internal/domain/user"
@@ -31,13 +32,15 @@ type service struct {
 	userService    user.Service
 	sessionService session.Service
 	userRepo       user.Repository
+	tokenManager   *security.TokenManager
 }
 
-func NewService(uSvc user.Service, sSvc session.Service, uRepo user.Repository) Service {
+func NewService(uSvc user.Service, sSvc session.Service, uRepo user.Repository, tm *security.TokenManager) Service {
 	return &service{
 		userService:    uSvc,
 		sessionService: sSvc,
 		userRepo:       uRepo,
+		tokenManager:   tm,
 	}
 }
 
@@ -58,6 +61,7 @@ func (s *service) RegisterUser(r *RegisterRequest) (*user.User, error) {
 }
 
 func (s *service) LoginUser(r *LoginRequest) (*user.User, error) {
+	r.Email = strings.ToLower(strings.TrimSpace(r.Email))
 	existingUser, err := s.userRepo.GetByEmail(r.Email)
 	if err != nil {
 		return nil, err
@@ -90,7 +94,12 @@ func (s *service) InvalidateSession(sessionID string) error {
 }
 
 func (s *service) GetMe(token string) (*user.User, error) {
-	sess, err := s.sessionService.GetSessionByID(token)
+	payload, err := s.tokenManager.ParseAccessToken(token)
+	if err != nil {
+		return nil, ErrSessionNotFound
+	}
+
+	sess, err := s.sessionService.GetSessionByID(payload.SID)
 	if err != nil {
 		return nil, err
 	}

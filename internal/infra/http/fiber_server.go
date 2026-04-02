@@ -14,7 +14,12 @@ func NewServer() *fiber.App {
 		AppName: "User Auth Service",
 	})
 
-	app.Use(cors.New())
+	app.Use(cors.New(cors.Config{
+		AllowOrigins:     "http://localhost:8080",
+		AllowHeaders:     "Origin, Content-Type, Accept, Authorization",
+		AllowMethods:     "GET, POST, PUT, DELETE, OPTIONS",
+		AllowCredentials: true,
+	}))
 	app.Use(logger.New())
 	app.Use(recover.New())
 

@@ -55,6 +55,18 @@ func NewAuthHandler(
 	}
 }
 
+// Register godoc
+// @Summary Register a new user
+// @Description Register a new user to the system.
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param request body auth.RegisterRequest true "Register User Request"
+// @Success 201 {object} handlers.SuccessResponse{data=user.User}
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 409 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /api/v1/auth/register [post]
 func (h *authHandler) Register(c *fiber.Ctx) error {
 	var req auth.RegisterRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -74,6 +86,19 @@ func (h *authHandler) Register(c *fiber.Ctx) error {
 	return SendSuccess(c, fiber.StatusCreated, "user registered successfully", sanitizeUser(createdUser))
 }
 
+// Login godoc
+// @Summary Login a user
+// @Description Authenticates a user and issues JWT tokens in cookies.
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param request body auth.LoginRequest true "Login Request"
+// @Success 200 {object} handlers.SuccessResponse
+// @Failure 400 {object} handlers.ErrorResponse
+// @Failure 401 {object} handlers.ErrorResponse
+// @Failure 404 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /api/v1/auth/login [post]
 func (h *authHandler) Login(c *fiber.Ctx) error {
 	var req auth.LoginRequest
 	if err := c.BodyParser(&req); err != nil {
@@ -124,6 +149,16 @@ func (h *authHandler) Login(c *fiber.Ctx) error {
 	return SendSuccess(c, fiber.StatusOK, "user logged in successfully", data)
 }
 
+// Refresh godoc
+// @Summary Refresh access token
+// @Description Issues a new access and refresh token pair using a valid refresh token cookie.
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Success 200 {object} handlers.SuccessResponse
+// @Failure 401 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /api/v1/auth/refresh [post]
 func (h *authHandler) Refresh(c *fiber.Ctx) error {
 	refreshToken := c.Cookies(refreshTokenCookieName)
 	if refreshToken == "" {
@@ -179,6 +214,17 @@ func (h *authHandler) Refresh(c *fiber.Ctx) error {
 	return SendSuccess(c, fiber.StatusOK, "tokens refreshed", data)
 }
 
+// Logout godoc
+// @Summary Logout a user
+// @Description Revokes the user session and clears authentication cookies.
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} handlers.SuccessResponse
+// @Failure 401 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /api/v1/auth/logout [post]
 func (h *authHandler) Logout(c *fiber.Ctx) error {
 	sessionID := h.sessionIDFromRequest(c)
 	if sessionID == "" {
@@ -193,8 +239,23 @@ func (h *authHandler) Logout(c *fiber.Ctx) error {
 	return SendSuccess(c, fiber.StatusOK, "logged out successfully", nil)
 }
 
+// Me godoc
+// @Summary Get current user profile
+// @Description Fetches the profile of the currently authenticated user.
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Success 200 {object} handlers.SuccessResponse{data=user.User}
+// @Failure 401 {object} handlers.ErrorResponse
+// @Failure 404 {object} handlers.ErrorResponse
+// @Failure 500 {object} handlers.ErrorResponse
+// @Router /api/v1/auth/me [get]
 func (h *authHandler) Me(c *fiber.Ctx) error {
 	token := extractBearerToken(c.Get("Authorization"))
+	if token == "" {
+		token = c.Cookies(accessTokenCookieName)
+	}
 	if token == "" {
 		token = c.Query("token")
 	}
@@ -258,16 +319,19 @@ func (h *authHandler) setAuthCookies(c *fiber.Ctx, pair *security.TokenPair) {
 	}
 
 	cookieBase := func(name, value string, maxAge int) *fiber.Cookie {
-		return &fiber.Cookie{
+		cookie := &fiber.Cookie{
 			Name:     name,
 			Value:    value,
-			Domain:   h.cookieDomain,
 			Path:     "/",
 			HTTPOnly: true,
-			Secure:   true,
-			SameSite: fiber.CookieSameSiteNoneMode,
+			Secure:   false, // Local dev: Secure=false
+			SameSite: fiber.CookieSameSiteLaxMode, // Local dev: Lax
 			MaxAge:   maxAge,
 		}
+		if h.cookieDomain != "" && h.cookieDomain != "localhost" {
+			cookie.Domain = h.cookieDomain
+		}
+		return cookie
 	}
 
 	c.Cookie(cookieBase(accessTokenCookieName, pair.AccessToken, accessMaxAge))
@@ -276,16 +340,19 @@ func (h *authHandler) setAuthCookies(c *fiber.Ctx, pair *security.TokenPair) {
 
 func (h *authHandler) clearAuthCookies(c *fiber.Ctx) {
 	clear := func(name string) {
-		c.Cookie(&fiber.Cookie{
+		cookie := &fiber.Cookie{
 			Name:     name,
 			Value:    "",
-			Domain:   h.cookieDomain,
 			Path:     "/",
 			HTTPOnly: true,
-			Secure:   true,
-			SameSite: fiber.CookieSameSiteNoneMode,
+			Secure:   false,
+			SameSite: fiber.CookieSameSiteLaxMode,
 			Expires:  time.Unix(0, 0),
-		})
+		}
+		if h.cookieDomain != "" && h.cookieDomain != "localhost" {
+			cookie.Domain = h.cookieDomain
+		}
+		c.Cookie(cookie)
 	}
 	clear(accessTokenCookieName)
 	clear(refreshTokenCookieName)
