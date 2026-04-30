@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account - Katgen</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #000; color: #fff; }
+        .btn-primary { background-color: #fff; color: #000; transition: background-color 0.2s ease; }
+        .btn-primary:hover { background-color: #e5e5e5; }
+        .input-field { border: 1px solid #333; background-color: #0a0a0a; color: #fff; border-radius: 6px; transition: border-color 0.2s ease; }
+        .input-field:focus { border-color: #fff; outline: none; box-shadow: 0 0 0 1px #fff; }
+        .input-field::placeholder { color: #555; }
+        .card-bg { background-color: #050505; border: 1px solid #222; }
+        .logo-box { background-color: #fff; color: #000; }
+        .text-muted { color: #888; }
+        .text-label { color: #ccc; }
+        .alert-error { background-color: #220000; border: 1px solid #550000; color: #ff6b6b; }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-sm">
+        <div class="text-center mb-8">
+            <div class="w-12 h-12 logo-box flex items-center justify-center font-bold text-2xl rounded-md mx-auto mb-4">K</div>
+            <h1 class="text-2xl font-bold tracking-tight">Create your Account</h1>
+            <p class="text-muted mt-2 text-sm">Join the Katgen ecosystem.</p>
+        </div>
+        
+        <div class="card-bg p-8 rounded-lg shadow-sm">
+            <form id="registerForm" class="space-y-4">
+                <div id="errorBox" class="hidden alert-error px-4 py-3 rounded text-sm mb-4"></div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-label mb-1">Full Name</label>
+                    <input type="text" id="fullname" required class="input-field block w-full px-4 py-2.5 sm:text-sm" placeholder="John Doe" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-label mb-1">Username</label>
+                    <input type="text" id="username" required class="input-field block w-full px-4 py-2.5 sm:text-sm" placeholder="johndoe" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-label mb-1">Email</label>
+                    <input type="email" id="email" required class="input-field block w-full px-4 py-2.5 sm:text-sm" placeholder="you@example.com" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-label mb-1">Password</label>
+                    <input type="password" id="password" required class="input-field block w-full px-4 py-2.5 sm:text-sm" placeholder="••••••••" />
+                </div>
+                
+                <div class="pt-4">
+                    <button type="submit" id="submitBtn" class="btn-primary w-full py-2.5 rounded-md font-medium text-sm">
+                        Sign Up
+                    </button>
+                </div>
+            </form>
+            
+            <div class="mt-6 text-center text-sm text-muted">
+                Already have an account? <a id="loginLink" href="/login" class="text-white font-medium hover:underline">Sign in</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const redirectUrl = new URLSearchParams(window.location.search).get('redirect_url');
+        if (redirectUrl) {
+            document.getElementById('loginLink').href = `/login?redirect_url=${encodeURIComponent(redirectUrl)}`;
+        }
+
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const btn = document.getElementById('submitBtn');
+            const originalText = btn.textContent;
+            btn.textContent = 'Creating account...';
+            btn.disabled = true;
+
+            const errorBox = document.getElementById('errorBox');
+            errorBox.classList.add('hidden');
+
+            const payload = {
+                fullname: document.getElementById('fullname').value,
+                username: document.getElementById('username').value,
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value,
+                role: 'user'
+            };
+
+            try {
+                const res = await fetch('/api/v1/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await res.json();
+                
+                if (!res.ok || !data.ok) {
+                    throw new Error(data.error || 'Registration failed');
+                }
+
+                // If successful, auto-login
+                const loginRes = await fetch('/api/v1/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: payload.email, password: payload.password })
+                });
+
+                if (loginRes.ok) {
+                    if (redirectUrl) {
+                        window.location.href = redirectUrl;
+                    } else {
+                        window.location.href = '/profile';
+                    }
+                } else {
+                    window.location.href = redirectUrl ? `/login?redirect_url=${encodeURIComponent(redirectUrl)}` : '/login';
+                }
+            } catch (err) {
+                errorBox.textContent = err.message;
+                errorBox.classList.remove('hidden');
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

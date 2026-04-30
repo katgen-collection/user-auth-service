@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - Katgen Account</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #000; color: #fff; }
+        .btn-primary { background-color: #fff; color: #000; transition: background-color 0.2s ease; }
+        .btn-primary:hover { background-color: #e5e5e5; }
+        .btn-outline { background-color: transparent; color: #fff; border: 1px solid #fff; transition: all 0.2s ease; }
+        .btn-outline:hover { background-color: #fff; color: #000; }
+        .input-field { border: 1px solid #333; background-color: #0a0a0a; color: #fff; border-radius: 6px; transition: border-color 0.2s ease; }
+        .input-field:focus { border-color: #fff; outline: none; box-shadow: 0 0 0 1px #fff; }
+        .input-field::placeholder { color: #555; }
+        .input-disabled { background-color: #050505; color: #555; border: 1px solid #222; cursor: not-allowed; }
+        .card-bg { background-color: #050505; border: 1px solid #222; }
+        .nav-bg { background-color: #000; border-bottom: 1px solid #222; }
+        .logo-box { background-color: #fff; color: #000; }
+        .text-muted { color: #888; }
+        .text-label { color: #ccc; }
+        .border-muted { border-color: #222; }
+        .alert-error { background-color: #220000; border: 1px solid #550000; color: #ff6b6b; }
+        .alert-success { background-color: #002200; border: 1px solid #005500; color: #4ade80; }
+    </style>
+</head>
+<body class="antialiased min-h-screen flex flex-col">
+    <!-- Navbar -->
+    <nav class="nav-bg sticky top-0 z-10">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 logo-box flex items-center justify-center font-bold text-lg rounded-sm">K</div>
+                    <h1 class="text-xl font-bold tracking-tight">Katgen</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a id="backLink" href="#" class="hidden text-sm font-medium text-muted hover:text-white transition-colors">Back to App</a>
+                    <button id="logoutBtn" class="text-sm font-medium text-muted hover:text-white transition-colors">Log out</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-4xl mx-auto w-full py-10 px-4 sm:px-6 lg:px-8">
+        <div class="mb-8">
+            <h2 class="text-3xl font-extrabold tracking-tight">Profile Settings</h2>
+            <p class="text-muted mt-1">Manage your account details and password.</p>
+        </div>
+
+        <div id="errorBox" class="hidden mb-6 alert-error px-4 py-3 rounded text-sm"></div>
+        <div id="successBox" class="hidden mb-6 alert-success px-4 py-3 rounded text-sm"></div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Profile Info Form -->
+            <div class="md:col-span-2 space-y-6">
+                <div class="card-bg p-6 sm:p-8 rounded-lg shadow-sm">
+                    <h3 class="text-lg font-semibold border-b border-muted pb-4 mb-5 text-white">Personal Information</h3>
+                    <form id="profileForm" class="space-y-5">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                            <div>
+                                <label class="block text-sm font-medium text-label mb-1">Full Name</label>
+                                <input type="text" id="fullname" class="input-field block w-full px-4 py-2.5 sm:text-sm" placeholder="John Doe">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-label mb-1">Username</label>
+                                <input type="text" id="username" class="input-field block w-full px-4 py-2.5 sm:text-sm" placeholder="johndoe">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-label mb-1">Email <span class="text-xs text-muted font-normal ml-1">(Cannot be changed)</span></label>
+                            <input type="email" id="email" disabled class="input-disabled block w-full px-4 py-2.5 rounded-md sm:text-sm">
+                        </div>
+
+                        <div class="pt-2">
+                            <button type="submit" id="saveProfileBtn" class="btn-primary w-full sm:w-auto px-6 py-2.5 rounded-md font-medium text-sm flex items-center justify-center gap-2">
+                                Save Profile
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Password Change Form -->
+                <div class="card-bg p-6 sm:p-8 rounded-lg shadow-sm">
+                    <h3 class="text-lg font-semibold border-b border-muted pb-4 mb-5 text-white">Security</h3>
+                    <form id="passwordForm" class="space-y-5">
+                        <div>
+                            <label class="block text-sm font-medium text-label mb-1">New Password</label>
+                            <input type="password" id="newPassword" class="input-field block w-full px-4 py-2.5 sm:text-sm" placeholder="Enter new password">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-label mb-1">Confirm New Password</label>
+                            <input type="password" id="confirmPassword" class="input-field block w-full px-4 py-2.5 sm:text-sm" placeholder="Confirm your new password">
+                        </div>
+
+                        <div class="pt-2">
+                            <button type="submit" id="savePasswordBtn" class="btn-outline w-full sm:w-auto px-6 py-2.5 rounded-md font-medium text-sm">
+                                Update Password
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Sidebar Info -->
+            <div class="md:col-span-1">
+                <div class="card-bg p-6 rounded-lg text-sm">
+                    <h4 class="font-semibold mb-4 text-base text-white">Account Details</h4>
+                    <div class="space-y-3">
+                        <div class="flex flex-col">
+                            <span class="text-muted text-xs uppercase tracking-wider mb-1">Role</span>
+                            <span id="roleBadge" class="font-medium bg-white text-black w-max px-2 py-0.5 rounded text-xs capitalize"></span>
+                        </div>
+                        <div class="flex flex-col pt-3 border-t border-muted">
+                            <span class="text-muted text-xs uppercase tracking-wider mb-1">Member Since</span>
+                            <span id="memberSince" class="font-medium text-white"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        let currentUser = null;
+        const redirectUrl = new URLSearchParams(window.location.search).get('redirect_url');
+        
+        if (redirectUrl) {
+            const backLink = document.getElementById('backLink');
+            backLink.href = redirectUrl;
+            backLink.classList.remove('hidden');
+        }
+
+        const errBox = document.getElementById('errorBox');
+        const succBox = document.getElementById('successBox');
+
+        function showError(msg) {
+            errBox.textContent = msg;
+            errBox.classList.remove('hidden');
+            succBox.classList.add('hidden');
+            setTimeout(() => errBox.classList.add('hidden'), 5000);
+        }
+
+        function showSuccess(msg) {
+            succBox.textContent = msg;
+            succBox.classList.remove('hidden');
+            errBox.classList.add('hidden');
+            setTimeout(() => succBox.classList.add('hidden'), 5000);
+        }
+
+        async function fetchMe() {
+            try {
+                const res = await fetch('/api/v1/auth/me');
+                if (res.status === 401) {
+                    window.location.href = redirectUrl ? `/login?redirect_url=${encodeURIComponent(redirectUrl)}` : '/login';
+                    return;
+                }
+                const data = await res.json();
+                if (!data.ok) throw new Error(data.error || 'Failed to fetch user');
+                
+                currentUser = data.data;
+                populateForm(currentUser);
+            } catch (err) {
+                showError(err.message);
+            }
+        }
+
+        function populateForm(user) {
+            document.getElementById('fullname').value = user.fullname;
+            document.getElementById('username').value = user.username;
+            document.getElementById('email').value = user.email;
+            document.getElementById('roleBadge').textContent = user.role;
+            document.getElementById('memberSince').textContent = new Date(user.created_at).toLocaleDateString();
+        }
+
+        // Handle Profile Update
+        document.getElementById('profileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('saveProfileBtn');
+            const originalText = btn.textContent;
+            btn.textContent = 'Saving...';
+            btn.disabled = true;
+
+            const payload = {
+                fullname: document.getElementById('fullname').value,
+                username: document.getElementById('username').value
+            };
+
+            try {
+                const res = await fetch(`/api/v1/users/${currentUser.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (res.status === 401) {
+                    const refreshRes = await fetch('/api/v1/auth/refresh', { method: 'POST' });
+                    if (refreshRes.ok) {
+                        const retryRes = await fetch(`/api/v1/users/${currentUser.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        if (!retryRes.ok) throw new Error('Update failed');
+                    } else {
+                        window.location.href = '/login';
+                        return;
+                    }
+                } else if (!res.ok) {
+                    const data = await res.json();
+                    throw new Error(data.error || 'Update failed');
+                }
+                
+                showSuccess('Profile updated successfully.');
+            } catch(err) {
+                showError(err.message);
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        });
+
+        // Handle Password Update
+        document.getElementById('passwordForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (!newPassword) {
+                showError('Please enter a new password.');
+                return;
+            }
+            if (newPassword !== confirmPassword) {
+                showError('Passwords do not match.');
+                return;
+            }
+            if (newPassword.length < 6) {
+                showError('Password must be at least 6 characters long.');
+                return;
+            }
+
+            const btn = document.getElementById('savePasswordBtn');
+            const originalText = btn.textContent;
+            btn.textContent = 'Updating...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`/api/v1/users/${currentUser.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: newPassword })
+                });
+                
+                if (res.status === 401) {
+                    const refreshRes = await fetch('/api/v1/auth/refresh', { method: 'POST' });
+                    if (refreshRes.ok) {
+                        const retryRes = await fetch(`/api/v1/users/${currentUser.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ password: newPassword })
+                        });
+                        if (!retryRes.ok) throw new Error('Password update failed');
+                    } else {
+                        window.location.href = '/login';
+                        return;
+                    }
+                } else if (!res.ok) {
+                    const data = await res.json();
+                    throw new Error(data.error || 'Password update failed');
+                }
+
+                showSuccess('Password updated successfully.');
+                document.getElementById('newPassword').value = '';
+                document.getElementById('confirmPassword').value = '';
+            } catch(err) {
+                showError(err.message);
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await fetch('/api/v1/auth/logout', { method: 'POST' });
+            window.location.href = redirectUrl ? `/login?redirect_url=${encodeURIComponent(redirectUrl)}` : '/login';
+        });
+
+        fetchMe();
+    </script>
+</body>
+</html>

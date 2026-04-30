@@ -15,8 +15,9 @@ type Config struct {
 	DatabasePassword   string
 	DatabaseName       string
 	Port               string
-	JWTSecret          string
+	RSAPrivateKeyPath  string
 	JWTRefreshSecret   string
+	RedisURL           string
 	CookieDomain       string
 	CorsAllowedOrigins string
 	SessionExpiryHours int
@@ -36,8 +37,9 @@ func Load() *Config {
 		DatabasePassword:   getEnv("DB_PASSWORD", ""),
 		DatabaseName:       getEnv("DB_NAME", ""),
 		Port:               getEnv("PORT", "3000"),
-		JWTSecret:          getEnv("JWT_SECRET", ""),
+		RSAPrivateKeyPath:  getEnv("RSA_PRIVATE_KEY_PATH", "../.secrets/private.pem"),
 		JWTRefreshSecret:   getEnv("JWT_REFRESH_SECRET", ""),
+		RedisURL:           getEnv("REDIS_URL", "redis://localhost:6379"),
 		CookieDomain:       getEnv("AUTH_COOKIE_DOMAIN", "localhost"),
 		CorsAllowedOrigins: getEnv("CORS_ALLOWED_ORIGINS", "http://localhost:3002,http://localhost:8080,https://chat.mikhailjbs.my.id"),
 		SessionExpiryHours: getEnvAsInt("SESSION_EXPIRY_HOURS", 72),

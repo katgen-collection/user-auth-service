@@ -18,6 +18,7 @@ import (
 	"mikhailjbs/user-auth-service/internal/infra/middleware"
 	"mikhailjbs/user-auth-service/internal/infra/repository"
 	"mikhailjbs/user-auth-service/internal/infra/security"
+	"mikhailjbs/user-auth-service/internal/infra/event"
 	authusecase "mikhailjbs/user-auth-service/internal/usecase/auth"
 	usecase "mikhailjbs/user-auth-service/internal/usecase/user"
 )
@@ -61,13 +62,14 @@ func Run() {
 	// 7. Init Token Manager
 	accessTTL := time.Duration(cfg.AccessTokenMinutes) * time.Minute
 	refreshTTL := time.Duration(cfg.RefreshTokenDays) * 24 * time.Hour
-	tokenManager, err := security.NewTokenManager(cfg.JWTSecret, cfg.JWTRefreshSecret, accessTTL, refreshTTL, logger.Log)
+	tokenManager, err := security.NewTokenManager(cfg.RSAPrivateKeyPath, cfg.JWTRefreshSecret, accessTTL, refreshTTL, logger.Log)
 	if err != nil {
 		logger.Log.Fatalf("Failed to initialize token manager: %v", err)
 	}
 
 	// 5. Init Service (Domain)
-	userService := user.NewService(userRepo)
+	redisPublisher := event.NewRedisPublisher(cfg.RedisURL)
+	userService := user.NewService(userRepo, redisPublisher)
 	sessionService := sessiondomain.NewService(sessionRepo)
 	authService := authdomain.NewService(userService, sessionService, userRepo, tokenManager)
 

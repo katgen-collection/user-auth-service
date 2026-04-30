@@ -1,7 +1,9 @@
 package security
 
 import (
+	"crypto/rsa"
 	"errors"
+	"os"
 	"strconv"
 	"time"
 
@@ -12,7 +14,7 @@ import (
 
 // TokenManager provides methods to create and verify access & refresh tokens.
 type TokenManager struct {
-	accessSecret  []byte
+	accessKey     *rsa.PrivateKey
 	refreshSecret []byte
 	accessTTL     time.Duration
 	refreshTTL    time.Duration
@@ -42,16 +44,25 @@ type ClaimsPayload struct {
 
 // NewTokenManager creates a TokenManager. Both secrets must be non-empty.
 // accessTTL and refreshTTL define token lifetimes.
-func NewTokenManager(accessSecret, refreshSecret string, accessTTL, refreshTTL time.Duration, logger *logrus.Logger) (*TokenManager, error) {
-	if accessSecret == "" || refreshSecret == "" {
-		return nil, errors.New("access and refresh secrets must be provided")
+func NewTokenManager(rsaPrivateKeyPath, refreshSecret string, accessTTL, refreshTTL time.Duration, logger *logrus.Logger) (*TokenManager, error) {
+	if rsaPrivateKeyPath == "" || refreshSecret == "" {
+		return nil, errors.New("rsa private key path and refresh secrets must be provided")
 	}
+	keyBytes, err := os.ReadFile(rsaPrivateKeyPath)
+	if err != nil {
+		return nil, err
+	}
+	privateKey, err := jwt.ParseRSAPrivateKeyFromPEM(keyBytes)
+	if err != nil {
+		return nil, err
+	}
+
 	if logger == nil {
 		// if not provided, create a minimal logger
 		logger = logrus.New()
 	}
 	return &TokenManager{
-		accessSecret:  []byte(accessSecret),
+		accessKey:     privateKey,
 		refreshSecret: []byte(refreshSecret),
 		accessTTL:     accessTTL,
 		refreshTTL:    refreshTTL,
@@ -83,8 +94,8 @@ func (t *TokenManager) GenerateTokenPair(userID, email, username string, roles [
 		"nbf":        now.Unix(),
 	}
 
-	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
-	accessStr, err := accessToken.SignedString(t.accessSecret)
+	accessToken := jwt.NewWithClaims(jwt.SigningMethodRS256, accessClaims)
+	accessStr, err := accessToken.SignedString(t.accessKey)
 	if err != nil {
 		t.logger.WithError(err).Error("failed to sign access token")
 		return nil, err
@@ -122,11 +133,11 @@ func (t *TokenManager) ParseAccessToken(tokenStr string) (*ClaimsPayload, error)
 		return nil, errors.New("token empty")
 	}
 	token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (any, error) {
-		// only accept HMAC signing
-		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+		// accept RSA signing
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, errors.New("unexpected signing method")
 		}
-		return t.accessSecret, nil
+		return &t.accessKey.PublicKey, nil
 	}, jwt.WithLeeway(5*time.Second))
 	if err != nil {
 		return nil, err

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 	"time"
+	"context"
 
 	"mikhailjbs/user-auth-service/internal/infra/security"
 
@@ -34,12 +35,18 @@ type Service interface {
 	Update(id string, u *User) (*User, error)
 }
 
-type service struct {
-	repo Repository
+type EventPublisher interface {
+	PublishUserCreated(ctx context.Context, u *User) error
+	PublishUserUpdated(ctx context.Context, u *User) error
 }
 
-func NewService(r Repository) Service {
-	return &service{repo: r}
+type service struct {
+	repo      Repository
+	publisher EventPublisher
+}
+
+func NewService(r Repository, p EventPublisher) Service {
+	return &service{repo: r, publisher: p}
 }
 
 func (s *service) Create(u *CreateUserRequest) (*User, error) {
@@ -74,7 +81,11 @@ func (s *service) Create(u *CreateUserRequest) (*User, error) {
 		UpdatedAt:    time.Now(),
 	}
 
-	return s.repo.Create(newUser)
+	createdUser, err := s.repo.Create(newUser)
+	if err == nil && s.publisher != nil {
+		s.publisher.PublishUserCreated(context.Background(), createdUser)
+	}
+	return createdUser, err
 }
 
 func (s *service) List(params *UserQueryParams) ([]*User, error) {
@@ -90,5 +101,9 @@ func (s *service) Delete(id string) error {
 }
 
 func (s *service) Update(id string, u *User) (*User, error) {
-	return s.repo.Update(id, u)
+	updatedUser, err := s.repo.Update(id, u)
+	if err == nil && s.publisher != nil {
+		s.publisher.PublishUserUpdated(context.Background(), updatedUser)
+	}
+	return updatedUser, err
 }

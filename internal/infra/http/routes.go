@@ -11,6 +11,17 @@ import (
 func RegisterRoutes(app *fiber.App, userHandler handlers.UserHandler, authHandler handlers.AuthHandler, authz *middleware.AuthMiddleware) {
 	app.Get("/swagger/*", swagger.HandlerDefault)
 
+	// UI Routes
+	app.Get("/login", func(c *fiber.Ctx) error {
+		return c.SendFile("./views/login.html")
+	})
+	app.Get("/register", func(c *fiber.Ctx) error {
+		return c.SendFile("./views/register.html")
+	})
+	app.Get("/profile", func(c *fiber.Ctx) error {
+		return c.SendFile("./views/profile.html")
+	})
+
 	api := app.Group("/api")
 	v1 := api.Group("/v1")
 

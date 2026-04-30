@@ -17,7 +17,7 @@ type UpdateUserRequest struct {
 }
 
 type UserQueryParams struct {
-	Email  *string `json:"email" bson:"email"`
-	Search *string `json:"search" bson:"search"`
-	Role   *string `json:"role" bson:"role"`
+	Email  *string `json:"email" bson:"email" query:"email"`
+	Search *string `json:"search" bson:"search" query:"search"`
+	Role   *string `json:"role" bson:"role" query:"role"`
 }
