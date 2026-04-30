@@ -3,6 +3,7 @@ package http
 import (
 	"mikhailjbs/user-auth-service/internal/infra/http/handlers"
 	"mikhailjbs/user-auth-service/internal/infra/middleware"
+	"mikhailjbs/user-auth-service/views"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/swagger"
@@ -13,13 +14,28 @@ func RegisterRoutes(app *fiber.App, userHandler handlers.UserHandler, authHandle
 
 	// UI Routes
 	app.Get("/login", func(c *fiber.Ctx) error {
-		return c.SendFile("./views/login.html")
+		html, err := views.FS.ReadFile("login.html")
+		if err != nil {
+			return c.Status(500).SendString("Error loading view")
+		}
+		c.Set("Content-Type", "text/html; charset=utf-8")
+		return c.Send(html)
 	})
 	app.Get("/register", func(c *fiber.Ctx) error {
-		return c.SendFile("./views/register.html")
+		html, err := views.FS.ReadFile("register.html")
+		if err != nil {
+			return c.Status(500).SendString("Error loading view")
+		}
+		c.Set("Content-Type", "text/html; charset=utf-8")
+		return c.Send(html)
 	})
 	app.Get("/profile", func(c *fiber.Ctx) error {
-		return c.SendFile("./views/profile.html")
+		html, err := views.FS.ReadFile("profile.html")
+		if err != nil {
+			return c.Status(500).SendString("Error loading view")
+		}
+		c.Set("Content-Type", "text/html; charset=utf-8")
+		return c.Send(html)
 	})
 
 	api := app.Group("/api")
