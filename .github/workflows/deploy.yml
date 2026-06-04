@@ -18,7 +18,7 @@ env:
   REMOTE_BIN_PATH: /usr/local/bin/user-auth-service
   REMOTE_ENV_DIR: /etc/user-auth-service
   REMOTE_ENV_FILE: /etc/user-auth-service/service.env
-  HEALTHCHECK_URL: https://api.mikhailjbs.my.id/auth/health
+  HEALTHCHECK_URL: https://api.katgen.pro/auth/health
 
 jobs:
   deploy:
